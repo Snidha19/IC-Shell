@@ -16,6 +16,28 @@
 #define MAXARGS 63
 int exitCode = 0;
 
+void execute(char* args[])
+{
+	int pid = fork();
+	int status;
+	if(pid > 0)		//process is parent
+	{
+		while (wait(&status) != pid)       // wait for completion to avoid zombie process
+        ;
+	}
+	else if(pid < 0)
+	{
+		printf("Error forking child");
+	}
+	else	//child process
+	{
+		if(execvp(args[0], args) < 0)
+       	{
+           	printf("Bad Command");
+       	}
+	}
+}
+
 int executeCmds(char* args[], char* lastCmd[])
 {
     if(strcmp("!!", args[0]) == 0)	//	implementation of !!
