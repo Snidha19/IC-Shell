@@ -246,22 +246,27 @@ int executeCmds(char* args[], char* lastCmd[], int noArgs)
 
 void handle_SIGINT()    //Signal handler function when CTRL-C is pressed
 {
-    //to kill child processes
-    if(childpid == 0)
+    if(childpid > 0)
     {
-        kill(childpid, SIGTERM);
+        kill(childpid, SIGKILL);
+        if (childpid == 0)
+        {
+            printf("process killed\n");
+        }
     }
-    printf("process killed if any\n");
 }
 
 // Signal Handler for SIGTSTP
 void sighandler(int sig_num)    //Signal handler function when CTRL-Z is pressed
 {
-    if (childpid == 0)
+    if(childpid > 0)
     {
         kill(childpid, SIGTSTP);
+        if (childpid == 0)
+        {
+            printf("process suspended\n");
+        }
     }
-    printf("Process suspended\n");
 }
 
 int main(int argc, char* argv[]) {
