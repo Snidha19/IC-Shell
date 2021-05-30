@@ -94,7 +94,8 @@ int executeCmds(char* args[], char* lastCmd[])
     }
     else
     {
-        printf("Bad Command\n");
+        execute(args);
+        // printf("Bad Command\n");
     }
     
 
