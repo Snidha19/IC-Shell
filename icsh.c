@@ -74,7 +74,7 @@ void in(char* args[], int i)
 	int oFile = open(args[i+1], O_RDWR | O_CREAT | O_APPEND, 0600);	//opening file
 	if (oFile==-1)
 	{ 
-		printf("opening %s\n", args[2]); 		//error if file doesn't open
+		printf("File doesnt exist %s\n", args[2]); 		//error if file doesn't open
 		return; 
 	}
 	int save_out = dup(fileno(stdin));		//copying original descriptor
@@ -96,7 +96,7 @@ void single_in(char* args[], int i)
 	int oFile = open(args[i+1], O_RDWR | O_CREAT | O_APPEND, 0600);	//opening file
 	if (oFile==-1)
 	{ 
-		printf("opening %s\n", args[2]); 		//error if file doesn't open
+		printf("File doesnt exist %s\n", args[2]); 		//error if file doesn't open
 		return; 
 	}
 	int save_out = dup(fileno(stdin));		//copying original descriptor
