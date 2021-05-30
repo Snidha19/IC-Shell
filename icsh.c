@@ -340,7 +340,7 @@ int main(int argc, char* argv[]) {
             continue;
         }
 
-        int x = executeCmds(args, lastCmd);
+        int x = executeCmds(args, lastCmd, noArgs);
         //return with exitcode
         if(x >=0)
         {
