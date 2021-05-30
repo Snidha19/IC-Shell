@@ -19,6 +19,8 @@ int exitCode = 0;
 //declared global variable to get access in signal handler and kill child processes
 int childpid = -1;
 
+int processes = 0;
+
 void execute(char* args[])
 {
 	int childpid = fork();
@@ -37,27 +39,29 @@ void execute(char* args[])
 		if(execvp(args[0], args) < 0)
        	{
            	printf("Bad Command\n");
+            processes += 1;
             exit(0);
+            return;
        	}
 	}
 }
 
 void out(char* args[], int i)
 {
-	args[i] = NULL;		//making '>' token null to execute command
+	args[i] = NULL;		//making '>' token null to execute cmd
 	int oFile = open(args[i+1], O_RDWR | O_CREAT | O_APPEND, 0600);	//opening file
 	if (oFile==-1)
 	{ 
-		printf("opening %s\n", args[2]); 		//error if file doesnt open
+		printf("opening %s\n", args[2]); 		//error if file doesn't open
 		return; 
 	}
 	int save_out = dup(fileno(stdout));		//copying original descriptor
-	if (dup2(oFile, fileno(stdout)	) == -1) 	//assigning descrptor stdout '>'
+	if (dup2(oFile, fileno(stdout)) == -1) 	//assigning descrptor stdout '>'
 	{ 
 		perror("redirection of output failed\n");
 		return;
 	}
-	execute(args);		//execute the command
+	execute(args);		//execute the cmd
 	fflush(stdout);		
 	close(oFile);
 	dup2(save_out, fileno(stdout));		//restoring original file descriptor
@@ -66,11 +70,11 @@ void out(char* args[], int i)
 
 void in(char* args[], int i)
 {
-	args[i] = NULL;		//making '<' token null to execute command
+	args[i] = NULL;		//making '<' token null to execute cmd
 	int oFile = open(args[i+1], O_RDWR | O_CREAT | O_APPEND, 0600);	//opening file
 	if (oFile==-1)
 	{ 
-		printf("opening %s\n", args[2]); 		//error if file doesnt open
+		printf("opening %s\n", args[2]); 		//error if file doesn't open
 		return; 
 	}
 	int save_out = dup(fileno(stdin));		//copying original descriptor
@@ -79,7 +83,7 @@ void in(char* args[], int i)
 		perror("redirection of input failed\n");
 		return;
 	}
-	// execute(args);		//execute the command
+	// execute(args);		//execute the cmd
 	fflush(stdin);		
 	close(oFile);
 	dup2(save_out, fileno(stdin));		//restoring original file descriptor
@@ -88,11 +92,11 @@ void in(char* args[], int i)
 
 void single_in(char* args[], int i)
 {
-	args[i] = NULL;		//making '<' token null to execute command
+	args[i] = NULL;		//making '<' token null to execute cmd
 	int oFile = open(args[i+1], O_RDWR | O_CREAT | O_APPEND, 0600);	//opening file
 	if (oFile==-1)
 	{ 
-		printf("opening %s\n", args[2]); 		//error if file doesnt open
+		printf("opening %s\n", args[2]); 		//error if file doesn't open
 		return; 
 	}
 	int save_out = dup(fileno(stdin));		//copying original descriptor
@@ -101,7 +105,7 @@ void single_in(char* args[], int i)
 		perror("redirection of input failed\n");
 		return;
 	}
-	execute(args);		//execute the command
+	execute(args);		//execute the cmd
 	fflush(stdin);		
 	close(oFile);
 	dup2(save_out, fileno(stdin));		//restoring original file descriptor
@@ -259,8 +263,6 @@ void sighandler(int sig_num)    //Signal handler function when CTRL-Z is pressed
     }
     printf("Process suspended\n");
 }
-
-
 
 int main(int argc, char* argv[]) {
 
