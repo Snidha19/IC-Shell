@@ -48,13 +48,13 @@ void out(char* args[], int i)
 	int oFile = open(args[i+1], O_RDWR | O_CREAT | O_APPEND, 0600);	//opening file
 	if (oFile==-1)
 	{ 
-		printf("opening %s", args[2]); 		//error if file doesnt open
+		printf("opening %s\n", args[2]); 		//error if file doesnt open
 		return; 
 	}
 	int save_out = dup(fileno(stdout));		//copying original descriptor
 	if (dup2(oFile, fileno(stdout)	) == -1) 	//assigning descrptor stdout '>'
 	{ 
-		perror("redirection of output failed");
+		perror("redirection of output failed\n");
 		return;
 	}
 	execute(args);		//execute the command
@@ -70,13 +70,35 @@ void in(char* args[], int i)
 	int oFile = open(args[i+1], O_RDWR | O_CREAT | O_APPEND, 0600);	//opening file
 	if (oFile==-1)
 	{ 
-		printf("opening %s", args[2]); 		//error if file doesnt open
+		printf("opening %s\n", args[2]); 		//error if file doesnt open
 		return; 
 	}
 	int save_out = dup(fileno(stdin));		//copying original descriptor
-	if (dup2(oFile, fileno(stdin)	) == -1) 	//assigning descrptor stdout '>'
+	if (dup2(oFile, fileno(stdin)) == -1) 	//assigning descrptor stdout '>'
 	{ 
-		perror("redirection of output failed");
+		perror("redirection of input failed\n");
+		return;
+	}
+	// execute(args);		//execute the command
+	fflush(stdin);		
+	close(oFile);
+	dup2(save_out, fileno(stdin));		//restoring original file descriptor
+	close(save_out);
+}
+
+void single_in(char* args[], int i)
+{
+	args[i] = NULL;		//making '<' token null to execute command
+	int oFile = open(args[i+1], O_RDWR | O_CREAT | O_APPEND, 0600);	//opening file
+	if (oFile==-1)
+	{ 
+		printf("opening %s\n", args[2]); 		//error if file doesnt open
+		return; 
+	}
+	int save_out = dup(fileno(stdin));		//copying original descriptor
+	if (dup2(oFile, fileno(stdin)) == -1) 	//assigning descrptor stdout '>'
+	{ 
+		perror("redirection of input failed\n");
 		return;
 	}
 	execute(args);		//execute the command
@@ -170,7 +192,31 @@ int executeCmds(char* args[], char* lastCmd[], int noArgs)
     }
     else if(strcmp("<",args[inFlag]) == 0 && rFlag==1)	//if < is user's input
     {
+        single_in(args, inFlag);
+    }
+    else if(strcmp(">",args[outFlag]) == 0 && rFlag==2 && outFlag < inFlag)	 //if > & < is user's input
+    {
+        out(args, outFlag);
+        if(strcmp("<",args[inFlag]) == 0)	//if < is user's input
+        {
+            in(args, inFlag);	
+        }
+        else 
+            {
+                return -1;
+            }
+    }
+    else if(strcmp("<",args[inFlag]) == 0 && rFlag==2 && outFlag > inFlag)	 //if < & > is user's input
+    {
         in(args, inFlag);
+        if(strcmp(">",args[outFlag]) == 0)	//if > is user's input
+        {
+            out(args, outFlag);
+        }
+        else 
+            {
+                return -1;
+            }
     }
     
     //store last cmd entered except "!!"
