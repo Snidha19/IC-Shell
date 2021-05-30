@@ -16,6 +16,9 @@
 #define MAXARGS 63
 int exitCode = 0;
 
+//declared global variable to get access in signal handler and kill child processes
+int childpid = -1;
+
 void execute(char* args[])
 {
 	int pid = fork();
@@ -33,7 +36,8 @@ void execute(char* args[])
 	{
 		if(execvp(args[0], args) < 0)
        	{
-           	printf("Bad Command");
+           	printf("Bad Command\n");
+            exit(0);
        	}
 	}
 }
@@ -42,7 +46,7 @@ int executeCmds(char* args[], char* lastCmd[])
 {
     if(strcmp("!!", args[0]) == 0)	//	implementation of !!
     {
-        //printing last command before executing it
+        //printing last cmd before executing it
         int i=0;
         while (lastCmd[i])
         {
@@ -51,7 +55,7 @@ int executeCmds(char* args[], char* lastCmd[])
         }
         printf("\n");
 
-        //copying last comd to current aruments
+        //copying last cmd to current aruments
         i=0;
         while (lastCmd[i])
         {
@@ -95,11 +99,9 @@ int executeCmds(char* args[], char* lastCmd[])
     else
     {
         execute(args);
-        // printf("Bad Command\n");
     }
     
-
-    //store last command entered except "!!"
+    //store last cmd entered except "!!"
     if (strcmp("!!", args[0]) != 0)
     {
         int i=0;
@@ -109,7 +111,7 @@ int executeCmds(char* args[], char* lastCmd[])
             lastCmd[i] = NULL;
             i+=1;
         }
-        //copying the command in lastCmd
+        //copying the cmd in lastCmd
         i=0;
         while (args[i])
         {
@@ -118,6 +120,26 @@ int executeCmds(char* args[], char* lastCmd[])
         }
     }
     return -1;
+}
+
+void handle_SIGINT()    //Signal handler function when CTRL-C is pressed
+{
+    //to kill child processes
+    if(childpid == 0)
+    {
+        kill(childpid, SIGTERM);
+    }
+    printf("process killed if any\n");
+}
+
+// Signal Handler for SIGTSTP
+void sighandler(int sig_num)    //Signal handler function when CTRL-Z is pressed
+{
+    if (childpid == 0)
+    {
+        kill(childpid, SIGTSTP);
+    }
+    printf("Process suspended\n");
 }
 
 
@@ -129,6 +151,13 @@ int main(int argc, char* argv[]) {
     int flag = 1;   //flag to run file commands for once
 	while (1)
 	{
+        //setup the signal handler for CTRL-C
+        struct sigaction handler;
+        handler.sa_handler = handle_SIGINT;
+        handler.sa_flags = SA_RESTART;
+        sigaction(SIGINT, &handler, NULL);
+        signal(SIGTSTP, sighandler);
+
 		// shell code here
 		//Input
 		char input[PRMTSIZ + 1] = { 0x0 };
