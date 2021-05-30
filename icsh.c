@@ -21,14 +21,14 @@ int childpid = -1;
 
 void execute(char* args[])
 {
-	int pid = fork();
+	int childpid = fork();
 	int status;
-	if(pid > 0)		//process is parent
+	if(childpid > 0)		//process is parent
 	{
-		while (wait(&status) != pid)       // wait for completion to avoid zombie process
+		while (wait(&status) != childpid)       // wait for completion to avoid zombie process
         ;
 	}
-	else if(pid < 0)
+	else if(childpid < 0)
 	{
 		printf("Error forking child");
 	}
@@ -42,8 +42,71 @@ void execute(char* args[])
 	}
 }
 
-int executeCmds(char* args[], char* lastCmd[])
+void out(char* args[], int i)
 {
+	args[i] = NULL;		//making '>' token null to execute command
+	int oFile = open(args[i+1], O_RDWR | O_CREAT | O_APPEND, 0600);	//opening file
+	if (oFile==-1)
+	{ 
+		printf("opening %s", args[2]); 		//error if file doesnt open
+		return; 
+	}
+	int save_out = dup(fileno(stdout));		//copying original descriptor
+	if (dup2(oFile, fileno(stdout)	) == -1) 	//assigning descrptor stdout '>'
+	{ 
+		perror("redirection of output failed");
+		return;
+	}
+	execute(args);		//execute the command
+	fflush(stdout);		
+	close(oFile);
+	dup2(save_out, fileno(stdout));		//restoring original file descriptor
+	close(save_out);
+}
+
+void in(char* args[], int i)
+{
+	args[i] = NULL;		//making '<' token null to execute command
+	int oFile = open(args[i+1], O_RDWR | O_CREAT | O_APPEND, 0600);	//opening file
+	if (oFile==-1)
+	{ 
+		printf("opening %s", args[2]); 		//error if file doesnt open
+		return; 
+	}
+	int save_out = dup(fileno(stdin));		//copying original descriptor
+	if (dup2(oFile, fileno(stdin)	) == -1) 	//assigning descrptor stdout '>'
+	{ 
+		perror("redirection of output failed");
+		return;
+	}
+	execute(args);		//execute the command
+	fflush(stdin);		
+	close(oFile);
+	dup2(save_out, fileno(stdin));		//restoring original file descriptor
+	close(save_out);
+}
+
+
+int executeCmds(char* args[], char* lastCmd[], int noArgs)
+{   
+    //For IO redirection
+	int outFlag = 0;
+	int inFlag = 0;
+	int rFlag = 0;
+	for(int i=0; i<noArgs; i++)
+	{
+		if(strcmp(">", args[i]) == 0)
+		{
+			outFlag = i;
+			rFlag++;
+		}
+		if(strcmp("<", args[i]) == 0)
+		{
+			inFlag = i;
+			rFlag++;
+		}
+	}
+    
     if(strcmp("!!", args[0]) == 0)	//	implementation of !!
     {
         //printing last cmd before executing it
@@ -55,7 +118,7 @@ int executeCmds(char* args[], char* lastCmd[])
         }
         printf("\n");
 
-        //copying last cmd to current aruments
+        //copying last cmd to current arguments
         i=0;
         while (lastCmd[i])
         {
@@ -96,9 +159,18 @@ int executeCmds(char* args[], char* lastCmd[])
             return (atoi(args[1]));
         } 
     }
-    else
+    else if(rFlag == 0)	//if any external cmd is detected
     {
+        //printf("Else\n");
         execute(args);
+    }
+    else if(strcmp(">",args[outFlag]) == 0 && rFlag==1)	//if > is user's input
+    {
+        out(args, outFlag);
+    }
+    else if(strcmp("<",args[inFlag]) == 0 && rFlag==1)	//if < is user's input
+    {
+        in(args, inFlag);
     }
     
     //store last cmd entered except "!!"
@@ -194,7 +266,8 @@ int main(int argc, char* argv[]) {
                     noArgs += 1;
                     p = strtok(NULL," ");
                 }
-                if(executeCmds(args, lastCmd) >= 0)
+                //execute cmd of file until 
+                if(executeCmds(args, lastCmd, noArgs-1) >= 0)
                 {
                     break;
                 }
